@@ -1,0 +1,9 @@
+build/
+.vscode/
+.git/
+*.db
+Dockerfile
+.dockerignore
+build-coverage/
+.github/
+scripts/

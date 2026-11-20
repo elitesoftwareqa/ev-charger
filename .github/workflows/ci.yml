@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# Cancel an older run of the same branch when a newer commit arrives.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends build-essential cmake ninja-build
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  coverage:
+    name: Code coverage
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build tools and gcovr
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends build-essential cmake ninja-build gcovr
+
+      - name: Build, test and measure coverage
+        # Fails the job if line coverage drops below 95%.
+        run: scripts/coverage.sh build-coverage --fail-under-line 95
+
+      - name: Show summary on the run page
+        if: always()
+        run: |
+          {
+            echo '### Code coverage'
+            echo '```'
+            gcovr --root . build-coverage --filter 'src/' --filter 'include/' --exclude 'src/main.cpp' --print-summary | tail -4
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            build-coverage/coverage/
+            build-coverage/coverage.xml
+
+  docker:
+    name: Docker image
+    runs-on: ubuntu-24.04
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      # Tests already ran in the "test" job, so skip them inside the image build.
+      - name: Build image
+        run: docker build --build-arg RUN_TESTS=false -t ev-charger:ci .
+
+      - name: Smoke test the image
+        run: docker run --rm ev-charger:ci | tee out.txt && grep -q "3 chargers" out.txt

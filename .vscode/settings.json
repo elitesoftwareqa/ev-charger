@@ -1,0 +1,6 @@
+{
+    // Group tests in the Testing panel by splitting names like
+    // "battery.BatteryTest.AddEnergy" at each "." (at most twice).
+    "cmake.ctest.testSuiteDelimiter": "\\.",
+    "cmake.ctest.testSuiteDelimiterMaxOccurrence": 2
+}
