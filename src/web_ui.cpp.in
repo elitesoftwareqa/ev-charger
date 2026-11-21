@@ -1,0 +1,7 @@
+// Generated from web/index.html by CMake (configure_file). Do not edit the
+// generated copy in the build folder; edit web/index.html instead.
+#include "web_ui.h"
+
+const char* webUiHtml() {
+    return R"EVHTML(@WEB_INDEX_HTML@)EVHTML";
+}

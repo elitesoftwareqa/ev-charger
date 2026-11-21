@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EV Charger</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#12202f;--muted:#4a5a6b;--line:#d5dee8;--navy:#0f1b2d;--teal:#0b7a6e;--teal-soft:#dff1ee;--amber:#e8833a;--amber-soft:#fbe9dc;--red:#b3261e;--red-soft:#f9dedc;--shadow:0 1px 3px rgba(15,27,45,.12)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1621;--card:#16212f;--ink:#e6edf4;--muted:#9fb0c2;--line:#2a3a4d;--navy:#0a111b;--teal:#3fbfae;--teal-soft:#14332f;--amber:#f09a5c;--amber-soft:#3a2818;--red:#f2a29b;--red-soft:#3b1f1d;--shadow:none}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Calibri,sans-serif}
+header{background:var(--navy);color:#fff;padding:14px 16px}
+.bar{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.bar h1{font-size:20px;margin:0;flex:1}
+.pill{display:inline-flex;align-items:center;gap:8px;font-size:14px;padding:4px 12px;border-radius:999px;background:rgba(255,255,255,.12)}
+.dot{width:10px;height:10px;border-radius:50%;background:#9aa7b5}
+.dot.ok{background:#3ddc97}.dot.bad{background:#ff6b5e}
+main{max-width:1040px;margin:0 auto;padding:16px}
+h2{font-size:18px;margin:20px 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 4px;font-size:18px}
+.badge{display:inline-block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:6px;background:var(--teal-soft);color:var(--teal)}
+.badge.busy{background:var(--amber-soft);color:var(--amber)}
+.specs{margin:10px 0;display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:14px}
+.specs dt{color:var(--muted)}.specs dd{margin:0;font-weight:600}
+button{font:inherit;font-weight:600;border:0;border-radius:8px;padding:10px 16px;cursor:pointer;background:var(--teal);color:#fff;min-height:44px}
+button.secondary{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button.danger{background:#b3261e;color:#fff}
+button:disabled{opacity:.5;cursor:not-allowed}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+label{display:block;font-size:14px;color:var(--muted);margin-bottom:4px}
+input,select{font:inherit;width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);min-height:44px}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:12px 0}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.error{background:var(--red-soft);color:var(--red);border:1px solid var(--red);border-radius:10px;padding:10px 14px;margin:12px 0;font-weight:600}
+.error[hidden],[hidden]{display:none!important}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0}
+.stat{background:var(--bg);border-radius:10px;padding:12px}
+.stat .v{font-size:26px;font-weight:700}.stat .k{font-size:13px;color:var(--muted)}
+.meter{height:18px;border-radius:9px;background:var(--line);overflow:hidden;margin:4px 0 10px}
+.meter>div{height:100%;background:var(--teal);transition:width .3s}
+.meter.cost>div{background:var(--amber)}
+.events{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.chip{font-size:13px;padding:3px 10px;border-radius:999px;background:var(--teal-soft);color:var(--teal);font-weight:600}
+.chip.warn{background:var(--amber-soft);color:var(--amber)}
+table{border-collapse:collapse;width:100%}
+td,th{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600;font-size:14px;width:55%}
+svg.chart{width:100%;height:auto;max-height:300px;background:var(--bg);border-radius:10px}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.note{color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<header><div class="bar"><h1>EV Charger</h1><span class="pill"><span class="dot" id="dot"></span><span id="statusText">Connecting…</span></span></div></header>
+<main>
+  <div class="error" id="error" role="alert" hidden></div>
+
+  <section id="listView">
+    <h2>Chargers</h2>
+    <div class="grid" id="chargers"></div>
+    <p class="note">Everything here is simulated: no real chargers, cars or cards.</p>
+  </section>
+
+  <section id="startView" hidden>
+    <h2 id="startTitle">Start a charge</h2>
+    <div class="card">
+      <div class="form">
+        <div><label for="budget">Spending limit ($)</label><input id="budget" type="number" min="0.01" step="0.01" value="20"></div>
+        <div><label for="balance">Card balance ($)</label><input id="balance" type="number" min="0" step="1" value="100"></div>
+        <div><label for="startPct">Battery now (%)</label><input id="startPct" type="number" min="0" max="100" step="1" value="20"></div>
+        <div><label for="capacity">Battery size (kWh)</label><input id="capacity" type="number" min="1" step="1" value="60"></div>
+      </div>
+      <div class="row"><button id="startBtn">Start charging</button><button class="secondary" id="cancelStart">Cancel</button></div>
+      <p class="note">The payter places a hold for the spending limit. A declined card means nothing starts.</p>
+    </div>
+  </section>
+
+  <section id="sessionView" hidden>
+    <h2 id="sessionTitle">Charging session</h2>
+    <div class="card">
+      <div class="stats">
+        <div class="stat"><div class="v" id="vBatt">0%</div><div class="k">Battery</div></div>
+        <div class="stat"><div class="v" id="vKwh">0.00</div><div class="k">Energy delivered (kWh)</div></div>
+        <div class="stat"><div class="v" id="vCost">$0.00</div><div class="k">Cost so far</div></div>
+        <div class="stat"><div class="v" id="vState">-</div><div class="k">Charger state</div></div>
+      </div>
+      <label>Battery level</label><div class="meter"><div id="mBatt" style="width:0%"></div></div>
+      <div id="budgetWrap"><label id="budgetLabel">Spending limit used</label><div class="meter cost"><div id="mCost" style="width:0%"></div></div></div>
+      <div class="events" id="events" aria-live="polite"></div>
+
+      <h2>Simulated clock</h2>
+      <p class="note">Time only passes when you move it forward. Use Auto-run to let it tick once a second.</p>
+      <div class="form">
+        <div><label for="secs">Time to add (seconds)</label><input id="secs" type="number" min="1" step="1" value="120"></div>
+        <div><label for="kw">Car requests (kW)</label><input id="kw" type="number" min="1" step="1" value="150"></div>
+      </div>
+      <div class="row">
+        <button id="advanceBtn">Add time</button>
+        <button class="secondary" id="autoBtn">Auto-run</button>
+        <button class="danger" id="stopBtn">Stop and get receipt</button>
+      </div>
+
+      <h2>Progress</h2>
+      <svg class="chart" id="chart" viewBox="0 0 600 220" role="img" aria-label="Battery level and cost over simulated time"></svg>
+      <div class="legend"><span><i style="background:var(--teal)"></i>Battery %</span><span><i style="background:var(--amber)"></i>Cost (% of limit)</span></div>
+    </div>
+  </section>
+
+  <section id="receiptView" hidden>
+    <h2>Receipt</h2>
+    <div class="card">
+      <table id="receiptTable"></table>
+      <div class="events" id="receiptEvents"></div>
+      <div class="row" style="margin-top:12px"><button id="doneBtn">Back to chargers</button></div>
+    </div>
+  </section>
+</main>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+let current = null, history = [], budget = null, timer = null, autoTimer = null, busy = false;
+
+// Build elements from text only, so charger names can never inject markup.
+function h(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  for (const k in (props || {})) { if (k === "class") e.className = props[k]; else if (k === "onclick") e.onclick = props[k]; else e.setAttribute(k, props[k]); }
+  for (const kid of kids) e.append(kid);
+  return e;
+}
+const money = n => "$" + Number(n).toFixed(2);
+const enc = encodeURIComponent;
+
+async function api(method, path, body) {
+  const res = await fetch(path, { method, headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined });
+  let data = null;
+  try { data = await res.json(); } catch (e) { /* no body */ }
+  if (!res.ok) throw new Error((data && data.error) || ("HTTP " + res.status));
+  return data;
+}
+function showError(msg) { const e = $("error"); e.textContent = msg; e.hidden = !msg; }
+function show(view) { for (const v of ["listView", "startView", "sessionView", "receiptView"]) $(v).hidden = (v !== view); showError(""); }
+function setStatus(ok) { $("dot").className = "dot " + (ok ? "ok" : "bad"); $("statusText").textContent = ok ? "Server connected" : "Server not reachable"; }
+
+async function loadChargers() {
+  try {
+    const list = await api("GET", "/chargers");
+    setStatus(true);
+    const box = $("chargers"); box.replaceChildren();
+    for (const c of list) {
+      const fee = c.session_fee > 0 ? money(c.session_fee) : "none";
+      const specs = h("dl", { class: "specs" },
+        h("dt", {}, "Max power"), h("dd", {}, c.max_power_kw + " kW"),
+        h("dt", {}, "Price"), h("dd", {}, money(c.price_per_kwh) + " / kWh"),
+        h("dt", {}, "Session fee"), h("dd", {}, fee));
+      const btn = c.in_use
+        ? h("button", { class: "secondary", onclick: () => openSession(c.name) }, "Open session")
+        : h("button", { onclick: () => openStart(c.name) }, "Start charge");
+      box.append(h("div", { class: "card" }, h("h3", {}, c.name),
+        h("span", { class: "badge" + (c.in_use ? " busy" : "") }, c.in_use ? "in use" : c.type), specs, btn));
+    }
+  } catch (e) { setStatus(false); }
+}
+
+function openStart(name) { current = name; $("startTitle").textContent = "Start a charge on " + name; show("startView"); }
+
+async function startCharge() {
+  if (busy) return; busy = true; $("startBtn").disabled = true;
+  try {
+    budget = Number($("budget").value);
+    const st = await api("POST", "/chargers/" + enc(current) + "/session", {
+      budget, card_balance: Number($("balance").value),
+      battery_percent: Number($("startPct").value), battery_capacity_kwh: Number($("capacity").value) });
+    history = [{ t: 0, b: st.battery_percent, c: st.cost_so_far }];
+    render(st); show("sessionView"); $("sessionTitle").textContent = "Charging on " + current;
+  } catch (e) { showError(e.message); }
+  finally { busy = false; $("startBtn").disabled = false; }
+}
+
+async function openSession(name) {
+  current = name; budget = null; history = [];
+  try { const st = await api("GET", "/chargers/" + enc(name) + "/session"); history = [{ t: 0, b: st.battery_percent, c: st.cost_so_far }]; render(st); show("sessionView"); $("sessionTitle").textContent = "Charging on " + name; }
+  catch (e) { show("listView"); showError(e.message); loadChargers(); }
+}
+
+function render(st) {
+  $("vBatt").textContent = st.battery_percent.toFixed(1) + "%";
+  $("vKwh").textContent = st.energy_delivered_kwh.toFixed(2);
+  $("vCost").textContent = money(st.cost_so_far);
+  $("vState").textContent = st.charger_state;
+  $("mBatt").style.width = Math.min(100, st.battery_percent) + "%";
+  $("budgetWrap").hidden = !budget;
+  if (budget) { const pct = Math.min(100, 100 * st.cost_so_far / budget); $("mCost").style.width = pct + "%"; $("budgetLabel").textContent = "Spending limit used: " + money(st.cost_so_far) + " of " + money(budget); }
+  const ev = $("events"); ev.replaceChildren();
+  for (const e of st.events) ev.append(h("span", { class: "chip" + (e === "BudgetReached" || e === "BatteryFull" ? " warn" : "") }, e));
+  $("advanceBtn").disabled = !st.charging;
+  if (!st.charging) stopAuto();
+  drawChart();
+}
+
+function drawChart() {
+  const svg = $("chart"); svg.replaceChildren();
+  const ns = "http://www.w3.org/2000/svg", W = 600, H = 220, L = 40, R = 10, T = 10, B = 28;
+  const mk = (tag, attrs, text) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text) e.textContent = text; return e; };
+  const tmax = Math.max(60, history[history.length - 1].t), x = t => L + (W - L - R) * t / tmax, y = v => T + (H - T - B) * (1 - v / 100);
+  for (const g of [0, 25, 50, 75, 100]) { svg.append(mk("line", { x1: L, x2: W - R, y1: y(g), y2: y(g), stroke: "currentColor", "stroke-opacity": ".15" })); svg.append(mk("text", { x: L - 6, y: y(g) + 4, "text-anchor": "end", "font-size": 11, fill: "currentColor", "fill-opacity": ".7" }, g + "%")); }
+  svg.append(mk("text", { x: W / 2, y: H - 6, "text-anchor": "middle", "font-size": 11, fill: "currentColor", "fill-opacity": ".7" }, "simulated minutes (" + (tmax / 60).toFixed(0) + " shown)"));
+  const line = (key, color, dash) => { const pts = history.map(p => x(p.t) + "," + y(key(p))).join(" "); svg.append(mk("polyline", { points: pts, fill: "none", stroke: color, "stroke-width": 3, "stroke-linejoin": "round", "stroke-dasharray": dash || "" })); };
+  line(p => p.b, "var(--teal)");
+  if (budget) line(p => Math.min(100, 100 * p.c / budget), "var(--amber)", "6 4");
+}
+
+async function advance() {
+  if (busy) return; busy = true;
+  try {
+    const secs = Number($("secs").value);
+    const st = await api("POST", "/chargers/" + enc(current) + "/session/advance", { seconds: secs, requested_kw: Number($("kw").value) });
+    history.push({ t: history[history.length - 1].t + secs, b: st.battery_percent, c: st.cost_so_far });
+    render(st);
+  } catch (e) { stopAuto(); showError(e.message); }
+  finally { busy = false; }
+}
+function stopAuto() { if (autoTimer) { clearInterval(autoTimer); autoTimer = null; } $("autoBtn").textContent = "Auto-run"; }
+function toggleAuto() { if (autoTimer) { stopAuto(); return; } $("autoBtn").textContent = "Pause"; autoTimer = setInterval(advance, 1000); advance(); }
+
+async function stopCharge() {
+  if (busy) return; stopAuto(); busy = true;
+  try {
+    const out = await api("DELETE", "/chargers/" + enc(current) + "/session"), r = out.receipt;
+    const t = $("receiptTable"); t.replaceChildren();
+    const rows = [["Charger", current], ["Battery before", r.energy_before_kwh.toFixed(2) + " kWh"], ["Battery after", r.energy_after_kwh.toFixed(2) + " kWh"],
+      ["Energy delivered", r.energy_delivered_kwh.toFixed(2) + " kWh"], ["Amount charged", money(r.amount_charged)], ["Hold released", money(r.amount_released)],
+      ["Payment taken", r.paid ? "Yes" : "No"], ["Battery matches charger", r.energy_matches ? "Yes" : "No"]];
+    for (const [k, v] of rows) t.append(h("tr", {}, h("th", {}, k), h("td", {}, v)));
+    const ev = $("receiptEvents"); ev.replaceChildren();
+    for (const e of out.events) ev.append(h("span", { class: "chip" }, e));
+    show("receiptView");
+  } catch (e) { showError(e.message); }
+  finally { busy = false; }
+}
+
+$("startBtn").onclick = startCharge;
+$("cancelStart").onclick = () => { show("listView"); loadChargers(); };
+$("advanceBtn").onclick = advance;
+$("autoBtn").onclick = toggleAuto;
+$("stopBtn").onclick = stopCharge;
+$("doneBtn").onclick = () => { current = null; show("listView"); loadChargers(); };
+loadChargers();
+setInterval(() => { if (!$("listView").hidden) loadChargers(); }, 3000);
+</script>
+</body>
+</html>

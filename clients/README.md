@@ -15,6 +15,13 @@ clients/ev_client.py demo ABB --budget 20
 The server listens on 127.0.0.1 only and has no authentication. Set `EV_CHARGER_URL`
 or pass `--url` to point the client elsewhere.
 
+## Web page
+
+Open the server's address in a browser (for example http://127.0.0.1:8080/) for a
+point-and-click version of everything below: charger cards, a live battery and
+cost chart, a simulated-clock control with Auto-run, and the receipt. The page is
+`web/index.html`, built into the server.
+
 ## Endpoints
 
 | Method | Path | Does |
@@ -45,4 +52,4 @@ curl -X POST localhost:8080/chargers/ABB/session/advance -d '{"seconds": 120}'
 curl -X DELETE localhost:8080/chargers/ABB/session
 ```
 
-Sessions live in the server's memory and are lost on restart. The REST tests are the `rest` group (20 tests).
+Sessions live in the server's memory and are lost on restart. The REST tests are the `rest` group (22 tests).

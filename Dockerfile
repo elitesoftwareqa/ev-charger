@@ -12,6 +12,7 @@ WORKDIR /src
 COPY CMakeLists.txt ./
 COPY include ./include
 COPY src ./src
+COPY web ./web
 COPY tests ./tests
 
 # CMake downloads SQLite and GoogleTest during this step (needs internet).

@@ -54,6 +54,14 @@ clients/ev_client.py chargers              # in another terminal
 clients/ev_client.py demo ABB --budget 20  # a whole charge, then the receipt
 ```
 
+A browser interface is served at the server's own address (for example
+`http://127.0.0.1:8099/`): start a charge, watch it live, stop and read the
+receipt. Its source is `web/index.html`, compiled into the server.
+
+![Charger list](docs/images/web-chargers.png)
+![A charge in progress](docs/images/web-session.png)
+![Receipt](docs/images/web-receipt.png)
+
 Endpoints: `GET /health`, `GET /chargers`, `GET /chargers/{name}`,
 `POST /chargers/{name}/session` (start), `GET .../session` (status),
 `POST .../session/advance` (move the clock) and `DELETE .../session` (stop and
@@ -63,7 +71,7 @@ authentication. Details: [clients/README.md](clients/README.md) and
 
 ## Tests
 
-364 tests in 8 groups, each its own program. QA testers: see
+366 tests in 8 groups, each its own program. QA testers: see
 [docs/EV-Charger-QA-Test-Guide.docx](docs/EV-Charger-QA-Test-Guide.docx).
 
 | Group | Covers |
@@ -119,6 +127,7 @@ smoke-test the REST server with the Python client.
 
 ```
 include/   headers            src/      implementation (demo: main.cpp, server: server_main.cpp)
+web/       browser interface (index.html, built into the server)
 tests/     GoogleTest suites   scripts/  run_tests.sh, coverage.sh
 clients/   REST client         docs/     reports, presentation, REST and QA guides
 ```

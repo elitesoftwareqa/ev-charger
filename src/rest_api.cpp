@@ -7,6 +7,7 @@
 #include <stdexcept>
 
 #include "charger_factory.h"
+#include "web_ui.h"
 
 using nlohmann::json;
 
@@ -231,6 +232,14 @@ void RestApi::registerRoutes(httplib::Server& server) {
         setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&yes), sizeof(yes));
     });
     using H = RestApiHandlers;
+    server.Get("/", [](const httplib::Request&, httplib::Response& res) {
+        // The page uses inline script and style and talks only to this server.
+        res.set_header("Content-Security-Policy",
+                       "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; "
+                       "connect-src 'self'");
+        res.set_header("X-Content-Type-Options", "nosniff");
+        res.set_content(webUiHtml(), "text/html; charset=utf-8");
+    });
     server.Get("/health", [](const httplib::Request&, httplib::Response& res) {
         reply(res, 200, {{"status", "ok"}});
     });

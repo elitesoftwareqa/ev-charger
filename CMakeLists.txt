@@ -68,7 +68,12 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(httplib_src json_src)
 
-add_library(rest_lib src/rest_api.cpp)
+# The web page (web/index.html) is compiled into the server as a string.
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/web/index.html WEB_INDEX_HTML)
+configure_file(src/web_ui.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/web_ui.cpp @ONLY)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS web/index.html)
+
+add_library(rest_lib src/rest_api.cpp ${CMAKE_CURRENT_BINARY_DIR}/web_ui.cpp)
 target_include_directories(rest_lib PUBLIC include)
 target_include_directories(rest_lib SYSTEM PUBLIC ${httplib_src_SOURCE_DIR} ${json_src_SOURCE_DIR}/include)
 target_link_libraries(rest_lib PUBLIC charger_lib Threads::Threads)

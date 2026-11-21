@@ -209,3 +209,22 @@ TEST_F(RestApiTest, SecondServerCannotShareThePort) {
     other_api.registerRoutes(other);
     EXPECT_FALSE(other.bind_to_port("127.0.0.1", port_));
 }
+
+TEST_F(RestApiTest, ServesTheWebPage) {
+    auto r = client_->Get("/");
+    ASSERT_TRUE(r);
+    EXPECT_EQ(r->status, 200);
+    EXPECT_NE(r->get_header_value("Content-Type").find("text/html"), std::string::npos);
+    EXPECT_NE(r->body.find("<title>EV Charger</title>"), std::string::npos);
+    EXPECT_FALSE(r->get_header_value("Content-Security-Policy").empty());
+}
+
+TEST_F(RestApiTest, WebPageNeverBuildsMarkupFromServerData) {
+    // Charger names come from the database. The page must put them in with
+    // textContent/append, never innerHTML, so a name like <script> stays text.
+    auto r = client_->Get("/");
+    ASSERT_TRUE(r);
+    EXPECT_EQ(r->body.find("innerHTML"), std::string::npos);
+    EXPECT_EQ(r->body.find("insertAdjacentHTML"), std::string::npos);
+    EXPECT_EQ(r->body.find("document.write"), std::string::npos);
+}
