@@ -37,6 +37,30 @@ jobs:
           grep -q "BudgetReached\|ChargingStopped" out.txt
           kill %1
 
+  windows:
+    name: Build and test (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S . -B build
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: REST server and client smoke test
+        shell: bash
+        run: |
+          build/Release/ev_charger_server.exe ci.db 8080 &
+          for i in $(seq 20); do curl -sf localhost:8080/health && break; sleep 0.5; done
+          python clients/ev_client.py demo ABB --budget 20 | tee out.txt
+          grep -q "BudgetReached\|ChargingStopped" out.txt
+          kill %1
+
   coverage:
     name: Code coverage
     runs-on: ubuntu-24.04

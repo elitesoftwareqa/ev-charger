@@ -3,5 +3,5 @@
 #include "web_ui.h"
 
 const char* webUiHtml() {
-    return R"EVHTML(@WEB_INDEX_HTML@)EVHTML";
+    return @WEB_INDEX_LITERAL@;
 }

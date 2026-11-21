@@ -23,7 +23,12 @@ find_package(Threads REQUIRED)
 add_library(sqlite3_lib STATIC ${sqlite_src_SOURCE_DIR}/sqlite3.c)
 target_include_directories(sqlite3_lib PUBLIC ${sqlite_src_SOURCE_DIR})
 target_link_libraries(sqlite3_lib PUBLIC Threads::Threads ${CMAKE_DL_LIBS})
-target_compile_options(sqlite3_lib PRIVATE -w)  # third-party code: no warnings
+target_compile_options(sqlite3_lib PRIVATE $<IF:$<C_COMPILER_ID:MSVC>,/w,-w>)  # third-party code: no warnings
+
+# MSVC: read source files as UTF-8 (the web page contains non-ASCII characters).
+if(MSVC)
+  add_compile_options(/utf-8)
+endif()
 
 # Library holding the Charger class
 add_library(charger_lib
@@ -70,6 +75,16 @@ FetchContent_MakeAvailable(httplib_src json_src)
 
 # The web page (web/index.html) is compiled into the server as a string.
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/web/index.html WEB_INDEX_HTML)
+# MSVC rejects one string literal over ~16 KB, so emit the page as several
+# adjacent raw literals, which the compiler joins into one string.
+string(LENGTH "${WEB_INDEX_HTML}" _web_len)
+set(WEB_INDEX_LITERAL "")
+set(_web_pos 0)
+while(_web_pos LESS _web_len)
+  string(SUBSTRING "${WEB_INDEX_HTML}" ${_web_pos} 6000 _web_chunk)
+  string(APPEND WEB_INDEX_LITERAL "R\"EVHTML(${_web_chunk})EVHTML\"\n")
+  math(EXPR _web_pos "${_web_pos} + 6000")
+endwhile()
 configure_file(src/web_ui.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/web_ui.cpp @ONLY)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS web/index.html)
 
@@ -77,6 +92,11 @@ add_library(rest_lib src/rest_api.cpp ${CMAKE_CURRENT_BINARY_DIR}/web_ui.cpp)
 target_include_directories(rest_lib PUBLIC include)
 target_include_directories(rest_lib SYSTEM PUBLIC ${httplib_src_SOURCE_DIR} ${json_src_SOURCE_DIR}/include)
 target_link_libraries(rest_lib PUBLIC charger_lib Threads::Threads)
+if(WIN32)
+  # cpp-httplib needs Windows 10+ APIs and Winsock; NOMINMAX keeps min/max usable.
+  target_compile_definitions(rest_lib PUBLIC _WIN32_WINNT=0x0A00 NOMINMAX)
+  target_link_libraries(rest_lib PUBLIC ws2_32)
+endif()
 
 add_executable(ev_charger_server src/server_main.cpp)
 target_link_libraries(ev_charger_server PRIVATE rest_lib)
