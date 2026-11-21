@@ -30,10 +30,15 @@ RUN useradd --system --uid 10001 --no-create-home ev \
  && mkdir /data && chown ev:ev /data
 
 COPY --from=build /src/build/ev_charger /usr/local/bin/ev_charger
+COPY --from=build /src/build/ev_charger_server /usr/local/bin/ev_charger_server
 
 USER ev
 WORKDIR /data
 VOLUME /data
+EXPOSE 8080
 
 ENTRYPOINT ["ev_charger"]
 CMD ["/data/chargers.db"]
+
+# REST server instead of the demo:
+#   docker run --rm -p 127.0.0.1:8080:8080 --entrypoint ev_charger_server IMAGE /data/chargers.db 8080 0.0.0.0

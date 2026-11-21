@@ -54,6 +54,28 @@ endif()
 add_executable(ev_charger src/main.cpp)
 target_link_libraries(ev_charger PRIVATE charger_lib)
 
+# REST interface: cpp-httplib (HTTP) and nlohmann/json, both header-only and hash-pinned.
+FetchContent_Declare(
+  httplib_src
+  URL https://raw.githubusercontent.com/yhirose/cpp-httplib/v0.18.3/httplib.h
+  URL_HASH SHA256=a0a0c13dc086663863dbe6730a19716f7d3744904b6205496e8301750814dbd5
+  DOWNLOAD_NO_EXTRACT TRUE  # a single header; the repo zip has filenames some locales cannot extract
+)
+FetchContent_Declare(
+  json_src
+  URL https://github.com/nlohmann/json/releases/download/v3.11.3/include.zip
+  URL_HASH SHA256=a22461d13119ac5c78f205d3df1db13403e58ce1bb1794edc9313677313f4a9d
+)
+FetchContent_MakeAvailable(httplib_src json_src)
+
+add_library(rest_lib src/rest_api.cpp)
+target_include_directories(rest_lib PUBLIC include)
+target_include_directories(rest_lib SYSTEM PUBLIC ${httplib_src_SOURCE_DIR} ${json_src_SOURCE_DIR}/include)
+target_link_libraries(rest_lib PUBLIC charger_lib Threads::Threads)
+
+add_executable(ev_charger_server src/server_main.cpp)
+target_link_libraries(ev_charger_server PRIVATE rest_lib)
+
 # Unit tests (GoogleTest, downloaded at configure time)
 FetchContent_Declare(
   googletest
@@ -94,6 +116,10 @@ add_ev_tests(database
   tests/charger_factory_test.cpp
   tests/charger_repository_test.cpp
 )
+add_ev_tests(rest
+  tests/rest_api_test.cpp
+)
+target_link_libraries(rest_tests PRIVATE rest_lib)
 # End-to-end "master" suites
 add_ev_tests(payter_master
   tests/payter_master_test.cpp

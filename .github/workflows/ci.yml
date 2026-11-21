@@ -29,6 +29,14 @@ jobs:
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
+      - name: REST server and client smoke test
+        run: |
+          build/ev_charger_server /tmp/ci.db 8080 &
+          for i in $(seq 20); do curl -sf localhost:8080/health && break; sleep 0.5; done
+          clients/ev_client.py demo ABB --budget 20 | tee out.txt
+          grep -q "BudgetReached\|ChargingStopped" out.txt
+          kill %1
+
   coverage:
     name: Code coverage
     runs-on: ubuntu-24.04
@@ -74,3 +82,11 @@ jobs:
 
       - name: Smoke test the image
         run: docker run --rm ev-charger:ci | tee out.txt && grep -q "3 chargers" out.txt
+
+      - name: Smoke test the REST server in the image
+        run: |
+          docker run -d --name evapi -p 127.0.0.1:8080:8080 --entrypoint ev_charger_server ev-charger:ci /data/chargers.db 8080 0.0.0.0
+          for i in $(seq 20); do curl -sf localhost:8080/health && break; sleep 0.5; done
+          clients/ev_client.py demo BTC --budget 10 | tee api.txt
+          grep -q "ChargingStopped" api.txt
+          docker rm -f evapi

@@ -22,7 +22,7 @@ only rebuild what changed.
 
 | Option | What it does |
 |---|---|
-| `-g`, `--group NAME` | Run one test group: `battery`, `charger`, `payment`, `app`, `database`, `payter_master`, `app_master` |
+| `-g`, `--group NAME` | Run one test group: `battery`, `charger`, `payment`, `app`, `database`, `rest`, `payter_master`, `app_master` |
 | `-r`, `--regex REGEX` | Run only tests whose name matches the regex |
 | `-d`, `--demo` | Also run the demo program after the tests pass |
 | `-c`, `--clean` | Delete the build folder first (full rebuild) |

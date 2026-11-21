@@ -5,7 +5,7 @@
 #
 # Options:
 #   -g, --group NAME    run only one test group (battery, charger, payment, app,
-#                       database, payter_master, app_master)
+#                       database, rest, payter_master, app_master)
 #   -r, --regex REGEX   run only tests whose name matches REGEX (ctest -R)
 #   -d, --demo          also run the demo program after the tests pass
 #   -c, --clean         delete the build folder first (full rebuild)
@@ -36,7 +36,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-valid_groups="battery charger payment app database payter_master app_master"
+valid_groups="battery charger payment app database rest payter_master app_master"
 if [[ -n "$group" && " $valid_groups " != *" $group "* ]]; then
   echo "Unknown group '$group'. Valid groups: $valid_groups" >&2
   exit 2
