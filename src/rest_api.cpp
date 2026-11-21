@@ -1,6 +1,7 @@
 #include "rest_api.h"
 
 #include <httplib.h>
+#include <sys/socket.h>
 
 #include <nlohmann/json.hpp>
 #include <stdexcept>
@@ -221,6 +222,14 @@ RestApi::RestApi(ChargerRepository& repository) : repository_(repository) {}
 RestApi::~RestApi() = default;
 
 void RestApi::registerRoutes(httplib::Server& server) {
+    // cpp-httplib enables SO_REUSEPORT by default, which lets a second copy of
+    // the server bind the same port. Sessions live in each process's memory, so
+    // requests would then be split between the copies and sessions would seem to
+    // vanish. Allow only SO_REUSEADDR, so a second copy fails to start instead.
+    server.set_socket_options([](socket_t sock) {
+        int yes = 1;
+        setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&yes), sizeof(yes));
+    });
     using H = RestApiHandlers;
     server.Get("/health", [](const httplib::Request&, httplib::Response& res) {
         reply(res, 200, {{"status", "ok"}});

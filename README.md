@@ -63,7 +63,7 @@ authentication. Details: [clients/README.md](clients/README.md) and
 
 ## Tests
 
-363 tests in 8 groups, each its own program. QA testers: see
+364 tests in 8 groups, each its own program. QA testers: see
 [docs/EV-Charger-QA-Test-Guide.docx](docs/EV-Charger-QA-Test-Guide.docx).
 
 | Group | Covers |

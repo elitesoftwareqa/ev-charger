@@ -199,3 +199,13 @@ TEST_F(RestApiTest, BtcSessionFeeShowsOnReceipt) {
     // 1 minute at 60 kW = 1 kWh at $0.40 plus the $1.00 fee.
     EXPECT_NEAR(body(stop)["receipt"]["amount_charged"].get<double>(), 1.40, 1e-6);
 }
+
+TEST_F(RestApiTest, SecondServerCannotShareThePort) {
+    // A second copy must fail to start, not silently share the port and split
+    // requests (and therefore sessions) between two processes.
+    InMemoryChargerRepository other_repo;
+    RestApi other_api(other_repo);
+    httplib::Server other;
+    other_api.registerRoutes(other);
+    EXPECT_FALSE(other.bind_to_port("127.0.0.1", port_));
+}

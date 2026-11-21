@@ -34,7 +34,7 @@ only rebuild what changed.
 ### Examples
 
 ```bash
-scripts/run_tests.sh                      # build and run all 363 tests
+scripts/run_tests.sh                      # build and run all 364 tests
 scripts/run_tests.sh -g battery           # only the battery group
 scripts/run_tests.sh -r 'ABB'             # only tests with "ABB" in the name
 scripts/run_tests.sh -g app_master -d     # one group, then run the demo

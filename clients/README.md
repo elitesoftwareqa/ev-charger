@@ -45,4 +45,4 @@ curl -X POST localhost:8080/chargers/ABB/session/advance -d '{"seconds": 120}'
 curl -X DELETE localhost:8080/chargers/ABB/session
 ```
 
-Sessions live in the server's memory and are lost on restart. The REST tests are the `rest` group (19 tests).
+Sessions live in the server's memory and are lost on restart. The REST tests are the `rest` group (20 tests).
