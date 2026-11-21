@@ -1,0 +1,38 @@
+<section id="close" class="dark" data-transition="fade">
+<div class="stage">
+<p class="eyebrow">Wrap-up</p>
+<h2 class="title">Decisions, limits and next steps</h2>
+<div class="cols3">
+<div class="colcard">
+<h3 class="colhead">Decisions</h3>
+<ul class="ul">
+<li>Rules in code, models in the database</li>
+<li>Storage behind an interface</li>
+<li>A charge never bills above its hold</li>
+<li>GoogleTest for parameters and mocks</li>
+</ul>
+</div>
+<div class="colcard">
+<h3 class="colhead">Limits</h3>
+<ul class="ul">
+<li>Specs are read once per charger</li>
+<li>ABB taper is decided per call</li>
+<li>No retry if capture fails</li>
+<li>App has no live feed</li>
+<li>Rules live in both C++ and SQL</li>
+</ul>
+</div>
+<div class="colcard">
+<h3 class="colhead">Next</h3>
+<ul class="ul">
+<li>A service with an API</li>
+<li>Retry failed captures</li>
+<li>A time-stepped charge curve</li>
+<li>Branch protection on main</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="foot"><p>EV Charger Simulation</p><p class="num">Page </p></div>
+<aside>Close on the limits: this is a simulation, so there is no real payment retry, no live charger feed and no service layer. The next steps are the ones that would take it toward a real deployment. The full written report has the details behind every slide.</aside>
+</section>

@@ -1,0 +1,20 @@
+<section id="build" class="light" data-transition="fade">
+<div class="stage">
+<p class="eyebrow">Delivery</p>
+<h2 class="title">From push to image, checked every time</h2>
+<div class="pipe">
+<div class="pstep"><p class="sn">1</p><h3 class="cs">Push</h3><p class="cb">GitHub Actions starts on every push and pull request.</p></div>
+<x-shape kind="arrow-right" class="right"></x-shape>
+<div class="pstep"><p class="sn">2</p><h3 class="cs">Build</h3><p class="cb">CMake and Ninja build everything, then all 344 tests run.</p></div>
+<x-shape kind="arrow-right" class="right"></x-shape>
+<div class="pstep"><p class="sn">3</p><h3 class="cs">Coverage</h3><p class="cb">The job fails below 95% line coverage and uploads the report.</p></div>
+<x-shape kind="arrow-right" class="right"></x-shape>
+<div class="pstep"><p class="sn">4</p><h3 class="cs">Image</h3><p class="cb">Docker builds a 102 MB non-root image and smoke-tests it.</p></div>
+<x-shape kind="arrow-right" class="right"></x-shape>
+<div class="pstep"><p class="sn">5</p><h3 class="cs">Release</h3><p class="cb">The v0.1.0 tag exists locally; pushing it and the release are manual.</p></div>
+</div>
+<p class="lead">Dependencies are fetched when CMake configures: GoogleTest 1.15.2 and SQLite 3.54.1, pinned by hash.</p>
+</div>
+<div class="foot"><p>EV Charger Simulation</p><p class="num">Page </p></div>
+<aside>The three CI jobs are build and test, code coverage with a 95 percent line gate, and the Docker image with a smoke test. The first run passed, as reported by the repository owner. Branch protection on main is a setting on GitHub that requires a pull request and the three checks; it is recommended but not part of the code.</aside>
+</section>

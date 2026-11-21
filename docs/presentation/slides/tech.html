@@ -1,0 +1,15 @@
+<section id="tech" class="dark" data-transition="fade">
+<div class="stage">
+<p class="eyebrow">Testing</p>
+<h2 class="title">Four techniques keep the tests honest</h2>
+<div class="grid2">
+<div class="card"><h3 class="ct">Contract tests</h3><p class="cb">One set of tests runs on every charger type, another on SQLite and the stub, so the two cannot drift apart.</p></div>
+<div class="card"><h3 class="ct">Mocks and stubs</h3><p class="cb">A strict gmock fails on any unexpected call: the factory may only read, and storage errors must reach the caller.</p></div>
+<div class="card"><h3 class="ct">Master suites</h3><p class="cb">End-to-end card-tap and app suites (14 and 17 scenarios) run on every charger and check every receipt.</p></div>
+<div class="card"><h3 class="ct">Coverage gate</h3><p class="cb">CI fails below 95% line coverage. Today: 99.5% of lines and 66.8% of branches.</p></div>
+</div>
+<div class="accent"><p class="acctxt">Found by the master suites: the budget was reported as used up when the battery filled first.</p></div>
+</div>
+<div class="foot"><p>EV Charger Simulation</p><p class="num">Page </p></div>
+<aside>Every receipt is checked against shared rules: the battery gain equals the energy delivered, the charge never exceeds the hold, and charged plus released equals the hold. The bug in the last line only appeared on the ABB and BTC chargers, which is why running every scenario on every charger type matters. It was fixed in PaymentSession.</aside>
+</section>

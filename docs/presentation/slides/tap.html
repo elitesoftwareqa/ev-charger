@@ -1,0 +1,16 @@
+<section id="tap" class="light" data-transition="fade">
+<div class="stage">
+<p class="eyebrow">Key flows</p>
+<h2 class="title">Card-tap flow: five steps, one receipt</h2>
+<div class="steps">
+<div class="step"><p class="sn">1</p><h3 class="ct">Hold</h3><p class="cb">The terminal places a hold. If it is declined, nothing else happens.</p></div>
+<div class="step"><p class="sn">2</p><h3 class="ct">Start</h3><p class="cb">The charger plugs in and starts. Battery energy is recorded as the before reading.</p></div>
+<div class="step"><p class="sn">3</p><h3 class="ct">Charge</h3><p class="cb">Power is capped by the charger. If the money runs out first, charging stops.</p></div>
+<div class="step"><p class="sn">4</p><h3 class="ct">Fill</h3><p class="cb">Energy goes into the battery. A full battery finishes the charge by itself.</p></div>
+<div class="step"><p class="sn">5</p><h3 class="ct">Settle</h3><p class="cb">The real cost is captured, never above the hold. The rest is released.</p></div>
+</div>
+<div class="dband"><p class="dtxt">Receipt: battery energy before and after, energy delivered, amount charged and amount released.</p></div>
+</div>
+<div class="foot"><p>EV Charger Simulation</p><p class="num">Page </p></div>
+<aside>PaymentSession.start places the hold, plugs in, starts charging and records the before reading. charge works out how many kilowatt-hours the remaining money buys. finish stops, records the after reading, captures the cost, releases the rest and returns the receipt.</aside>
+</section>

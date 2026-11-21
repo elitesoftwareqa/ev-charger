@@ -1,0 +1,18 @@
+<section id="wrong" class="light" data-transition="fade">
+<div class="stage">
+<p class="eyebrow">Key flows</p>
+<h2 class="title">What happens when things go wrong</h2>
+<table class="tbl">
+<tr><th style="width:38%">Situation</th><th style="width:62%">Result</th></tr>
+<tr><td>Card declined or terminal offline</td><td>No charging; no hold left behind</td></tr>
+<tr><td>Charger faulted or occupied</td><td>App returns ChargerUnavailable before any hold</td></tr>
+<tr><td>Money runs out first</td><td>Charging stops; billed exactly the hold; BudgetReached</td></tr>
+<tr><td>Battery fills first</td><td>Charger finishes itself; unused hold released; BatteryFull</td></tr>
+<tr><td>Phone goes offline</td><td>Stop fails with NotConnected; the charger keeps going</td></tr>
+<tr><td>Terminal drops before capture</td><td>paid = false: energy delivered, nothing billed</td></tr>
+<tr><td>Charger fault mid-charge</td><td>Delivered energy is settled; fault cleared at the end</td></tr>
+</table>
+</div>
+<div class="foot"><p>EV Charger Simulation</p><p class="num">Page </p></div>
+<aside>Every one of these cases has tests, run on all three charger types in the two master suites. The failure that matters most for money: if payment capture fails after charging, the receipt says paid is false and the driver is not billed. There is no retry step yet.</aside>
+</section>

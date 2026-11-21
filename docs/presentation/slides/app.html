@@ -1,0 +1,27 @@
+<section id="app" class="dark" data-transition="fade">
+<div class="stage">
+<p class="eyebrow">Key flows</p>
+<h2 class="title">Phone app: the same session, plus guard rails</h2>
+<div class="cols2">
+<div class="listcol">
+<ol class="ol">
+<li>startCharge checks the budget, the connection, any running session and the charger, then starts the session.</li>
+<li>advance drives the charge and sends BudgetReached or BatteryFull, once each.</li>
+<li>stopCharge needs a connection, then settles payment and returns the receipt.</li>
+</ol>
+</div>
+<div class="card grow">
+<h3 class="ct">Start can return</h3>
+<div class="stackp">
+<p class="pill">Started</p>
+<p class="pill">NotConnected</p>
+<p class="pill">AlreadyCharging</p>
+<p class="pill">ChargerUnavailable</p>
+<p class="pill">PaymentDeclined</p>
+</div>
+</div>
+</div>
+</div>
+<div class="foot"><p>EV Charger Simulation</p><p class="num">Page </p></div>
+<aside>ChargingApp wraps the same PaymentSession as the card tap. It adds the connection check, the available-charger check and notifications. The app only sends commands: the charger keeps running on its own if the phone drops off the network.</aside>
+</section>

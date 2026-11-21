@@ -1,0 +1,61 @@
+<section id="arch" class="light" data-transition="fade">
+<div class="stage">
+<h2 class="title">Five layers, one session, one interface</h2>
+<div class="arch">
+<div class="stack">
+<div class="band">
+<div class="lab"><p class="lname">Entry points</p></div>
+<div class="boxes">
+<div class="box"><h3 class="bn">Phone app</h3><p class="bb">start, stop, status</p></div>
+<div class="box"><h3 class="bn">Card tap</h3><p class="bb">hold, then charge</p></div>
+<div class="box"><h3 class="bn">Demo program</h3><p class="bb">runs one charge each</p></div>
+</div>
+</div>
+<x-shape kind="arrow-down" class="down"></x-shape>
+<div class="band">
+<div class="lab"><p class="lname">Orchestration</p></div>
+<div class="boxes">
+<div class="box main"><h3 class="bn">PaymentSession</h3><p class="bb">hold, charge, settle, receipt</p></div>
+<div class="box"><h3 class="bn">makeCharger</h3><p class="bb">spec row to charger class</p></div>
+</div>
+</div>
+<x-shape kind="arrow-down" class="down"></x-shape>
+<div class="band">
+<div class="lab"><p class="lname">Domain</p></div>
+<div class="boxes">
+<div class="box"><h3 class="bn">Charger family</h3><p class="bb">state, power, fee</p></div>
+<div class="box"><h3 class="bn">Battery</h3><p class="bb">energy, charge level</p></div>
+<div class="box"><h3 class="bn">PaymentTerminal</h3><p class="bb">hold, capture, release</p></div>
+</div>
+</div>
+<x-shape kind="arrow-down" class="down"></x-shape>
+<div class="band">
+<div class="lab"><p class="lname">Storage</p><p class="lsub">via interface</p></div>
+<div class="boxes">
+<div class="box"><h3 class="bn">ChargerDatabase</h3><p class="bb">real data in SQLite</p></div>
+<div class="box"><h3 class="bn">In-memory stub</h3><p class="bb">fast tests</p></div>
+<div class="box"><h3 class="bn">Mock</h3><p class="bb">gmock, checks calls</p></div>
+</div>
+</div>
+<x-shape kind="arrow-down" class="down"></x-shape>
+<div class="band">
+<div class="lab"><p class="lname">Foundation</p></div>
+<div class="boxes">
+<div class="box"><h3 class="bn">SQLite 3.54.1</h3><p class="bb">embedded engine</p></div>
+<div class="box"><h3 class="bn">chargers.db</h3><p class="bb">the data file</p></div>
+<div class="box"><h3 class="bn">constants.h</h3><p class="bb">every number</p></div>
+</div>
+</div>
+</div>
+<div class="side">
+<p class="sh">Around the code</p>
+<p class="si">CMake + Ninja build</p>
+<p class="si">GoogleTest: 344 tests in 7 groups</p>
+<p class="si">Docker: 102 MB runtime image</p>
+<p class="si">GitHub Actions on every push</p>
+</div>
+</div>
+</div>
+<div class="foot"><p>EV Charger Simulation</p><p class="num">Page </p></div>
+<aside>Read it top to bottom: each layer calls only layers below it. Every paid charge goes through PaymentSession, highlighted. Charger specs reach the code only through the repository interface, which has three implementations: SQLite, an in-memory stub and a gmock mock. The panel on the right is the tooling that builds, tests and ships everything.</aside>
+</section>

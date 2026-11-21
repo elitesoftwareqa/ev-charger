@@ -1,0 +1,26 @@
+<section id="data" class="light" data-transition="fade">
+<div class="stage">
+<p class="eyebrow">Data</p>
+<h2 class="title">Specs live in SQLite, behind an interface</h2>
+<div class="cols2">
+<div class="card grow">
+<h3 class="ct">The table rejects bad rows</h3>
+<ul class="ulc">
+<li>name is unique and not empty</li>
+<li>type is generic, abb or btc</li>
+<li>power and price are above 0</li>
+<li>session fee is 0 or more</li>
+<li>taper threshold is 0 to 100</li>
+<li>taper factor is above 0, at most 1</li>
+</ul>
+</div>
+<div class="listcol">
+<div class="card tight"><h3 class="cs">ChargerDatabase</h3><p class="cb">The real thing on SQLite. Values are bound parameters, so odd names cannot break a query.</p></div>
+<div class="card tight"><h3 class="cs">In-memory stub</h3><p class="cb">The same rules with no database, for fast tests that never touch SQLite.</p></div>
+<div class="card tight"><h3 class="cs">gmock mock</h3><p class="cb">Checks which calls are made and forces storage errors.</p></div>
+</div>
+</div>
+</div>
+<div class="foot"><p>EV Charger Simulation</p><p class="num">Page </p></div>
+<aside>Charger models are rows in one table called chargers. The database itself enforces the rules, even if another tool writes the rows. The rest of the program only knows the ChargerRepository interface. A factory reads one row and builds the matching charger class. A price changed in the database affects chargers built afterward, not ones already running.</aside>
+</section>
