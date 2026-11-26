@@ -1,0 +1,451 @@
+[
+  {
+    "id": "TC-01",
+    "title": "Charge started from the phone app",
+    "type": "Positive, end to end",
+    "priority": "P1",
+    "severity": "Critical",
+    "starts_from": "Phone app (ChargingApp)",
+    "objective": "A driver starts a paid charge from the app, watches it progress, stops it, and gets a correct receipt. The money, the energy and the charger state must all agree.",
+    "prerequisites": [
+      "Project built (scripts/run_tests.sh builds into build-cli/).",
+      "Card on file has $100. Battery is 100 kWh at 20% (20 kWh). The car asks for 20 kW.",
+      "The phone app is code, not a screen, so it is exercised through the app_master suite. TC-03 and TC-08 repeat the same logic by hand through the REST service and the web page."
+    ],
+    "test_data": "Hold $50 | two steps of 300 s at 20 kW | all three chargers (Generic, ABB, BTC)",
+    "steps": [
+      {
+        "step": "Driver starts a charge with a $50 hold.",
+        "expected": "Result is Started. Status shows charging. The card has a $50 hold."
+      },
+      {
+        "step": "App advances 300 s at 20 kW, twice.",
+        "expected": "Energy delivered is exactly twice one step. Cost so far is session fee plus energy times price. Battery percent rises after every step."
+      },
+      {
+        "step": "Driver presses Stop.",
+        "expected": "Result is Stopped. Receipt is marked paid and energy_matches is true. Energy before is 20 kWh."
+      },
+      {
+        "step": "Check the money on the receipt.",
+        "expected": "Charged never exceeds $50. Charged plus released equals $50 exactly. Card balance is $100 minus charged."
+      },
+      {
+        "step": "Check the end state.",
+        "expected": "Charger is Available again. Events are exactly ChargingStarted then ChargingStopped. The last receipt matches what Stop returned."
+      }
+    ],
+    "pass_criteria": "All 9 automated checks pass (3 tests on each of 3 chargers), and every receipt satisfies the rules above.",
+    "automated": {
+      "count": 9,
+      "groups": "app_master"
+    },
+    "run": [
+      "scripts/run_tests.sh --regex \"AppMasterTest.(FullHappyPath|BatteryPercentRisesWithEveryStep|StatusBeforeStopMatchesTheReceipt)\""
+    ]
+  },
+  {
+    "id": "TC-02",
+    "title": "Charge started by tapping a card at the charger",
+    "type": "Positive, end to end",
+    "priority": "P1",
+    "severity": "Critical",
+    "starts_from": "Card tap (PaymentSession)",
+    "objective": "A driver taps a card on the payter, charges, removes the car, and is billed for exactly the energy used. No phone app is involved.",
+    "prerequisites": [
+      "Project built.",
+      "Card has $100. Battery is 100 kWh at 20%. The car asks for 20 kW.",
+      "Card tap is code, so it is exercised through the payter_master suite."
+    ],
+    "test_data": "Hold $50 | one run of 600 s at 20 kW | all three chargers",
+    "steps": [
+      {
+        "step": "Driver taps the card with a $50 hold.",
+        "expected": "Tap is accepted. Charger state is Charging. The payter shows an authorisation of exactly $50."
+      },
+      {
+        "step": "Charge runs for 600 s at 20 kW.",
+        "expected": "Energy delivered equals the charger's delivered power times 600 s."
+      },
+      {
+        "step": "Driver removes the car (session ends).",
+        "expected": "Receipt is marked paid. Energy before is 20 kWh. Energy delivered matches the battery gain."
+      },
+      {
+        "step": "Check the money.",
+        "expected": "Charged equals session fee plus energy times price, never above $50. Released is the rest. Card balance is $100 minus charged."
+      },
+      {
+        "step": "Check the end state.",
+        "expected": "The payter no longer shows an authorisation. Charger is Available. The battery reading equals the receipt's energy after."
+      },
+      {
+        "step": "Repeat the same charge in smaller steps.",
+        "expected": "Total energy is identical to the single 600 s run."
+      }
+    ],
+    "pass_criteria": "All 9 automated checks pass and every receipt satisfies the money and energy rules.",
+    "automated": {
+      "count": 9,
+      "groups": "payter_master"
+    },
+    "run": [
+      "scripts/run_tests.sh --regex \"PayterMasterTest.(FullHappyPath|BatteryReadingMatchesReceiptAfterTheSession|SplittingTheChargeIntoStepsGivesTheSameEnergy)\""
+    ]
+  },
+  {
+    "id": "TC-03",
+    "title": "Charge started from the REST server or web page",
+    "type": "Positive, end to end",
+    "priority": "P1",
+    "severity": "Critical",
+    "starts_from": "REST server (RestApi) and web page",
+    "objective": "An app, script or person uses the network interface to run a whole charge. This is the only flow a tester can run by hand against the real database.",
+    "prerequisites": [
+      "Server running with a fresh start: scripts/rest_server.sh (port 8099). No sessions exist yet.",
+      "A second terminal with curl, or a browser open at http://127.0.0.1:8099/.",
+      "Defaults apply: card $100, battery 60 kWh at 20% (12 kWh), car request 150 kW."
+    ],
+    "test_data": "ABB | budget $20 | advance 120 s",
+    "steps": [
+      {
+        "step": "curl -s localhost:8099/health",
+        "expected": "HTTP 200 and {\"status\":\"ok\"}."
+      },
+      {
+        "step": "curl -s localhost:8099/chargers",
+        "expected": "Three chargers: Generic 11 kW, ABB, BTC. All show in_use false."
+      },
+      {
+        "step": "curl -s -X POST localhost:8099/chargers/ABB/session -d '{\"budget\":20}'",
+        "expected": "HTTP 201. battery_percent 20.0, charging true, cost_so_far 0.0, events [\"ChargingStarted\"]. ABB now shows in_use true."
+      },
+      {
+        "step": "curl -s -X POST localhost:8099/chargers/ABB/session/advance -d '{\"seconds\":120}'",
+        "expected": "HTTP 200. energy_delivered_kwh 5.0, cost_so_far 2.25, battery_percent about 28.33."
+      },
+      {
+        "step": "curl -s localhost:8099/chargers/ABB/session",
+        "expected": "Same figures as the previous step. Reading status changes nothing."
+      },
+      {
+        "step": "curl -s -X DELETE localhost:8099/chargers/ABB/session",
+        "expected": "HTTP 200. Receipt: amount_charged 2.25, amount_released 17.75, energy_before_kwh 12.0, energy_after_kwh 17.0, energy_delivered_kwh 5.0, paid true, energy_matches true. Events end with ChargingStopped."
+      },
+      {
+        "step": "curl -s localhost:8099/chargers/ABB/session",
+        "expected": "HTTP 404 {\"error\":\"no session on charger: ABB\"}. ABB shows in_use false again."
+      }
+    ],
+    "pass_criteria": "Every step returns the status and figures listed. The 5 related automated checks pass.",
+    "automated": {
+      "count": 5,
+      "groups": "rest"
+    },
+    "run": [
+      "scripts/rest_server.sh",
+      "Then run the commands in the steps below (or use the web page)."
+    ]
+  },
+  {
+    "id": "TC-04",
+    "title": "Charge started from the demo program",
+    "type": "Positive, end to end (smoke)",
+    "priority": "P2",
+    "severity": "Major",
+    "starts_from": "Demo program (ev_charger)",
+    "objective": "The original program fills a new database with the default chargers, runs one 10-minute charge on each, and prints a summary. It proves the database, factory and chargers work together.",
+    "prerequisites": [
+      "Project built.",
+      "A database path that does not exist yet, for example /tmp/qa-demo.db. The program creates and fills it.",
+      "Note: the demo does not use payment. It goes from the factory straight to the charger and battery."
+    ],
+    "test_data": "60 kWh battery at 20% | 150 kW request | 600 s per charger",
+    "steps": [
+      {
+        "step": "Run the demo with a new database path.",
+        "expected": "First line: Charger database: /tmp/qa-demo.db (3 chargers)."
+      },
+      {
+        "step": "Read the Generic line.",
+        "expected": "Generic 11 kW: 1.83333 kWh delivered, $0.55, battery now 23.0556%."
+      },
+      {
+        "step": "Read the ABB line.",
+        "expected": "ABB: 25 kWh delivered, $11.25, battery now 61.6667%."
+      },
+      {
+        "step": "Read the BTC line.",
+        "expected": "BTC: 10 kWh delivered, $5, battery now 36.6667% (includes the $1 session fee)."
+      },
+      {
+        "step": "Run the demo again with the same path.",
+        "expected": "Still 3 chargers (no duplicates) and the same three result lines."
+      }
+    ],
+    "pass_criteria": "All five steps match. The program exits normally with no error line.",
+    "automated": {
+      "count": 73,
+      "groups": "database"
+    },
+    "run": [
+      "build-cli/ev_charger /tmp/qa-demo.db"
+    ]
+  },
+  {
+    "id": "TC-05",
+    "title": "The card is declined",
+    "type": "Negative",
+    "priority": "P1",
+    "severity": "Critical",
+    "starts_from": "REST server (same rule for app and card tap)",
+    "objective": "When the card cannot cover the hold, nothing starts and nothing is left behind: no session, no hold, no occupied charger.",
+    "prerequisites": [
+      "Server running with a fresh start (scripts/rest_server.sh, port 8099).",
+      "ABB is free (in_use false)."
+    ],
+    "test_data": "ABB | budget $20 | card_balance $5 (too low)",
+    "steps": [
+      {
+        "step": "curl -s -X POST localhost:8099/chargers/ABB/session -d '{\"budget\":20,\"card_balance\":5}'",
+        "expected": "HTTP 402 {\"error\":\"payment declined\"}."
+      },
+      {
+        "step": "curl -s localhost:8099/chargers/ABB/session",
+        "expected": "HTTP 404 {\"error\":\"no session on charger: ABB\"}. No session was created."
+      },
+      {
+        "step": "curl -s localhost:8099/chargers",
+        "expected": "ABB still shows in_use false."
+      },
+      {
+        "step": "curl -s -X POST localhost:8099/chargers/ABB/session -d '{\"budget\":20}'",
+        "expected": "HTTP 201. With a normal card the same charger starts at once, so no hold or session was left behind."
+      },
+      {
+        "step": "curl -s -X DELETE localhost:8099/chargers/ABB/session",
+        "expected": "Clean-up. Receipt shows amount_charged 0.0 and amount_released 20.0, because no energy was advanced."
+      }
+    ],
+    "pass_criteria": "The decline is reported as 402, and steps 2 to 4 prove nothing was left behind.",
+    "automated": {
+      "count": 10,
+      "groups": "rest, app_master, payter_master"
+    },
+    "run": [
+      "scripts/rest_server.sh",
+      "Then run the commands in the steps below."
+    ]
+  },
+  {
+    "id": "TC-06",
+    "title": "Two drivers want the same charger",
+    "type": "Negative",
+    "priority": "P1",
+    "severity": "Major",
+    "starts_from": "REST server (same rule for app and card tap)",
+    "objective": "While Driver A is charging, Driver B is refused cleanly. A's session is untouched, B's card is not held, and other chargers keep working.",
+    "prerequisites": [
+      "Server running with a fresh start (scripts/rest_server.sh, port 8099).",
+      "All chargers free. Two terminals: one for Driver A and one for Driver B, plus a third for step 6."
+    ],
+    "test_data": "Driver A and Driver B both ask for ABB, budget $20",
+    "steps": [
+      {
+        "step": "A: curl -s -X POST localhost:8099/chargers/ABB/session -d '{\"budget\":20}'",
+        "expected": "HTTP 201. A is charging on ABB."
+      },
+      {
+        "step": "B: curl -s -X POST localhost:8099/chargers/ABB/session -d '{\"budget\":20}'",
+        "expected": "HTTP 409 {\"error\":\"charger already has a session\"}."
+      },
+      {
+        "step": "curl -s localhost:8099/chargers",
+        "expected": "ABB shows in_use true. The other two show false."
+      },
+      {
+        "step": "A: curl -s -X POST localhost:8099/chargers/ABB/session/advance -d '{\"seconds\":120}'",
+        "expected": "A is unaffected: energy_delivered_kwh 5.0 and cost_so_far 2.25."
+      },
+      {
+        "step": "B: curl -s -X POST localhost:8099/chargers/BTC/session -d '{\"budget\":20}'",
+        "expected": "HTTP 201. A different charger is available to B at the same time."
+      },
+      {
+        "step": "Start a second copy of the server on the same port: build-cli/ev_charger_server /tmp/qa2.db 8099",
+        "expected": "It prints error: could not listen on port 8099 and exits with code 1. Two servers can never share one port."
+      },
+      {
+        "step": "A: curl -s -X DELETE localhost:8099/chargers/ABB/session",
+        "expected": "A's receipt: charged 2.25, released 17.75."
+      },
+      {
+        "step": "B: curl -s -X POST localhost:8099/chargers/ABB/session -d '{\"budget\":20}'",
+        "expected": "HTTP 201. ABB is free again once A has stopped."
+      },
+      {
+        "step": "Clean up: DELETE the ABB and BTC sessions",
+        "expected": "Stopping BTC with no energy still charges the $1.00 session fee (charged 1.0, released 19.0). This is the documented BTC rule."
+      }
+    ],
+    "pass_criteria": "B is refused with 409, A's figures are unchanged, B's other charger starts, and the second server cannot start.",
+    "automated": {
+      "count": 15,
+      "groups": "rest, app_master, payter_master"
+    },
+    "run": [
+      "scripts/rest_server.sh",
+      "Then run the commands in the steps below."
+    ]
+  },
+  {
+    "id": "TC-07",
+    "title": "Exploratory: does the ABB slowdown survive big time steps?",
+    "type": "Exploratory",
+    "priority": "P3",
+    "severity": "Minor (known limit)",
+    "starts_from": "REST server, free exploration",
+    "objective": "Unscripted, time-boxed investigation. ABB drops to half power above 80%. The code decides the power once at the start of each time step, so a large step might skip the slowdown.",
+    "prerequisites": [
+      "Server running with a fresh start (scripts/rest_server.sh, port 8099).",
+      "Time box: 45 minutes. Keep notes as you go. Compare figures, do not assume them."
+    ],
+    "test_data": "ABB | battery_percent 70 | budget $50 | compare one big step with many small steps",
+    "steps": [
+      {
+        "step": "Start: curl -s -X POST localhost:8099/chargers/ABB/session -d '{\"budget\":50,\"battery_percent\":70}', then ONE advance of 600 s, then Stop.",
+        "expected": "Observed: energy_delivered_kwh 18.0, amount_charged 8.1. The battery filled in one step."
+      },
+      {
+        "step": "Same start. Then TEN advances of 60 s each, then Stop.",
+        "expected": "Observed: energy_delivered_kwh 16.25, amount_charged 7.31. The slowdown applied after the battery passed 80%."
+      },
+      {
+        "step": "Compare the two receipts.",
+        "expected": "Same car, same 10 minutes, different energy and bill. Observed difference: 1.75 kWh and $0.79."
+      },
+      {
+        "step": "Try more: a 30 s step, a 3600 s step, battery_percent 79, 80 and 81, other chargers.",
+        "expected": "No expected result is set in advance. Record what you see."
+      }
+    ],
+    "pass_criteria": "Not pass or fail. The result is a written note of what was observed, and any defect raised.",
+    "automated": {
+      "count": 0,
+      "groups": "none for step crossing"
+    },
+    "run": [
+      "scripts/rest_server.sh",
+      "Run each variant on a fresh ABB session, then stop it and read the receipt."
+    ]
+  },
+  {
+    "id": "TC-08",
+    "title": "Charge run from the web page in a browser",
+    "type": "Positive, end to end",
+    "priority": "P1",
+    "severity": "Major",
+    "starts_from": "Web page in a browser",
+    "objective": "A person runs a whole charge with the mouse and no command line. Every screen must show the same figures the REST service returns for the same charge in TC-03.",
+    "prerequisites": [
+      "Server running with a fresh start: scripts/rest_server.sh (port 8099). No sessions exist yet.",
+      "A current browser open at http://127.0.0.1:8099/. Make the window tall enough to see the Add time button, or scroll down to it.",
+      "Leave every box at its default: spending limit 20, card balance 100, battery now 20, battery size 60."
+    ],
+    "test_data": "ABB | spending limit $20 | card $100 | battery 20% of 60 kWh | add 120 s at 150 kW",
+    "steps": [
+      {
+        "step": "Open http://127.0.0.1:8099/.",
+        "expected": "The header badge says Server connected. Three cards show: Generic 11 kW (11 kW, $0.30 / kWh, session fee none), ABB (150 kW, $0.45 / kWh, none) and BTC (60 kW, $0.40 / kWh, $1.00). Each has a Start charge button."
+      },
+      {
+        "step": "Click Start charge on the ABB card.",
+        "expected": "The Start a charge on ABB form opens with Spending limit 20, Card balance 100, Battery now 20 and Battery size 60."
+      },
+      {
+        "step": "Click Start charging.",
+        "expected": "Charging on ABB appears: Battery 20.0%, Energy delivered 0.00, Cost so far $0.00, Charger state charging. Text under the bars reads Spending limit used: $0.00 of $20.00, and a ChargingStarted label shows."
+      },
+      {
+        "step": "Leave Time to add at 120 and Car requests at 150, then click Add time.",
+        "expected": "Battery 28.3%, Energy delivered 5.00, Cost so far $2.25, Charger state charging. Spending limit used: $2.25 of $20.00. The Progress chart now has a line."
+      },
+      {
+        "step": "Click Stop and get receipt.",
+        "expected": "Receipt screen: Charger ABB, Battery before 12.00 kWh, Battery after 17.00 kWh, Energy delivered 5.00 kWh, Amount charged $2.25, Hold released $17.75, Payment taken Yes, Battery matches charger Yes. ChargingStarted and ChargingStopped labels show."
+      },
+      {
+        "step": "Click Back to chargers.",
+        "expected": "The charger list returns. ABB shows its normal badge and a Start charge button again, not IN USE."
+      }
+    ],
+    "pass_criteria": "Every screen shows the figures listed, and the receipt matches the TC-03 receipt for the same charge. The 2 related automated checks pass.",
+    "automated": {
+      "count": 2,
+      "groups": "rest: page is served, and never builds markup from server data"
+    },
+    "run": [
+      "scripts/rest_server.sh",
+      "Then open http://127.0.0.1:8099/ and follow the steps below."
+    ]
+  },
+  {
+    "id": "TC-09",
+    "title": "Charge run by the REST demo script",
+    "type": "Positive, end to end (smoke)",
+    "priority": "P2",
+    "severity": "Major",
+    "starts_from": "REST demo script (scripts/rest_demo.sh)",
+    "objective": "One command starts a throwaway server, runs a full charge on every charger through the Python client, and stops the server. It proves the server, the client and the scripts work together, and it is the same check CI runs after every push.",
+    "prerequisites": [
+      "Project built. The script builds the server itself if needed.",
+      "Python 3 and curl installed.",
+      "No server needed: the script starts its own throwaway server and database, and removes them at the end.",
+      "Port 8099 must be free. If you already have a server running on it, use --port 8098 and leave your server alone."
+    ],
+    "test_data": "Budget $10 on each charger | 600 s steps | defaults: card $100, battery 60 kWh at 20%",
+    "steps": [
+      {
+        "step": "scripts/rest_demo.sh",
+        "expected": "Prints ==> Building, then ==> Chargers."
+      },
+      {
+        "step": "Read the Chargers table.",
+        "expected": "Three lines: Generic 11 kW generic 11.0 kW $0.3/kWh; ABB abb 150.0 kW $0.45/kWh; BTC btc 60.0 kW $0.4/kWh."
+      },
+      {
+        "step": "Read the ABB charge.",
+        "expected": "Starting a $10.00 charge on ABB, battery 20.0%. One step: +600s battery 57.0%, 22.22 kWh, $10.00. Receipt: delivered 22.22 kWh, charged $10.00, released $0.00. Events: ChargingStarted, BudgetReached, ChargingStopped."
+      },
+      {
+        "step": "Read the BTC charge.",
+        "expected": "Three steps: 10.00 kWh and $5.00 (battery 36.7%), then 20.00 kWh and $9.00 (53.3%), then 22.50 kWh and $10.00 (57.5%). Receipt: delivered 22.50 kWh, charged $10.00, released $0.00. Same three events. The $1.00 session fee is inside the $10.00."
+      },
+      {
+        "step": "Read the Generic 11 kW charge.",
+        "expected": "19 steps, each adding 1.83 kWh and $0.55, ending at 33.33 kWh and $10.00 (battery 75.6%). Receipt: delivered 33.33 kWh, charged $10.00, released $0.00. Same three events."
+      },
+      {
+        "step": "Check the ending: read the last line, then run echo $?",
+        "expected": "Last line is ==> Done. Server stopped. The exit code is 0."
+      },
+      {
+        "step": "Check the clean-up: look for a leftover server or database.",
+        "expected": "Nothing is listening on the demo port and no /tmp/ev-demo-*.db file remains."
+      },
+      {
+        "step": "Negative check: start any server on port 8099 (scripts/rest_server.sh), then run scripts/rest_demo.sh in a second terminal.",
+        "expected": "It refuses to run: Port 8099 is already in use. Use --port, or: pkill -f ev_charger_server. The exit code is 1. Your own server is untouched."
+      }
+    ],
+    "pass_criteria": "All three receipts show charged $10.00, released $0.00 and BudgetReached, the script exits 0 and leaves nothing behind, and the port clash is refused with exit 1. The 3 related automated checks pass.",
+    "automated": {
+      "count": 3,
+      "groups": "rest: full session, budget running out, BTC session fee"
+    },
+    "run": [
+      "scripts/rest_demo.sh",
+      "If port 8099 is busy: scripts/rest_demo.sh --port 8098"
+    ]
+  }
+]

@@ -114,3 +114,27 @@ jobs:
           clients/ev_client.py demo BTC --budget 10 | tee api.txt
           grep -q "ChargingStopped" api.txt
           docker rm -f evapi
+
+  jira:
+    name: Open Jira bug on failure
+    needs: [test, windows, coverage, docker]
+    # Only for pushes to main. Skipped quietly until the four Jira secrets exist.
+    if: failure() && github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    env:
+      JIRA_URL: ${{ secrets.JIRA_URL }}
+      JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+      JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+      JIRA_PROJECT: ${{ secrets.JIRA_PROJECT }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      COMMIT: ${{ github.sha }}
+      ACTOR: ${{ github.actor }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Open or update the Jira bug
+        if: env.JIRA_URL != ''
+        run: |
+          scripts/jira_tool.py bug --ci --build "${COMMIT:0:7}" \
+            --title "CI failed on main" \
+            --body "CI failed on main at commit ${COMMIT:0:7} (pushed by ${ACTOR}). Run: ${RUN_URL}"
