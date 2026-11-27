@@ -77,6 +77,7 @@ authentication. Details: [clients/README.md](clients/README.md) and
 Manual test cases TC-01 to TC-09, with prerequisites, priorities, severities, steps
 and results: [docs/EV-Charger-QA-Flow-Test-Cases.docx](docs/EV-Charger-QA-Flow-Test-Cases.docx).
 A day of QA work: [docs/EV-Charger-QA-Day-in-the-Life.docx](docs/EV-Charger-QA-Day-in-the-Life.docx).
+How a run is executed, recorded and closed, and how a bug is filed: [docs/EV-Charger-QA-Test-Execution-and-Bug-Filing.docx](docs/EV-Charger-QA-Test-Execution-and-Bug-Filing.docx).
 
 ## Bug tracking in Jira
 
