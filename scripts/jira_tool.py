@@ -9,6 +9,7 @@ Settings come from environment variables, never from files:
   JIRA_EMAIL      the Atlassian account email that owns the API token
   JIRA_API_TOKEN  API token from https://id.atlassian.com/manage-profile/security/api-tokens
   JIRA_PROJECT    project key, for example EVC
+  JIRA_BUG_TYPE   optional: name of the issue type used for bugs (default Bug)
 """
 import argparse, base64, json, os, sys, urllib.error, urllib.parse, urllib.request
 
@@ -57,6 +58,13 @@ def create(c, fields):
     if st == 400 and "priority" in json.dumps(data) and "priority" in fields:
         fields = {k: v for k, v in fields.items() if k != "priority"}   # project screen has no Priority field
         st, data = call(c, "POST", "/rest/api/2/issue", {"fields": fields})
+    if st == 400 and "issuetype" in json.dumps(data):
+        wanted = fields["issuetype"]["name"]
+        st2, proj = call(c, "GET", "/rest/api/3/project/" + c["JIRA_PROJECT"])
+        names = [t["name"] for t in proj.get("issueTypes", [])] if st2 == 200 else []
+        sys.exit(f"issue type '{wanted}' is not available in {c['JIRA_PROJECT']}. "
+                 f"Types in this space: {', '.join(names) or 'could not be read'}. "
+                 "Add the type in Space settings, or set JIRA_BUG_TYPE (bugs) to one of the names above.")
     if st not in (200, 201):
         sys.exit(f"create failed ({st}): {data}")
     return data["key"]
@@ -133,7 +141,7 @@ def cmd_bug(a):
         return
     labels = ["ci-failure"] if a.ci else ["defect"]
     print("created", create(c, {"project": {"key": c["JIRA_PROJECT"]}, "summary": a.title, "description": body,
-                                "issuetype": {"name": "Bug"}, "labels": labels,
+                                "issuetype": {"name": os.environ.get("JIRA_BUG_TYPE", "Bug")}, "labels": labels,
                                 "priority": {"name": "High" if a.ci else "Medium"}}))
 
 
