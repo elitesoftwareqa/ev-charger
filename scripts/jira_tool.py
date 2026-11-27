@@ -3,6 +3,7 @@
 
   scripts/jira_tool.py cases [--dry-run]            create one Task per test case in jira/test_cases.json
   scripts/jira_tool.py bug --title T --body B       open a Bug, or comment on the open CI bug (--dry-run to preview)
+  scripts/jira_tool.py filters [--dry-run]          create the saved filters that the Jira dashboard uses
 
 Settings come from environment variables, never from files:
   JIRA_URL        https://your-site.atlassian.net
@@ -145,6 +146,32 @@ def cmd_bug(a):
                                 "priority": {"name": "High" if a.ci else "Medium"}}))
 
 
+FILTERS = [
+    ("EVC Test Cases", "project = {p} AND labels = test-case ORDER BY key ASC"),
+    ("EVC Open Bugs", "project = {p} AND issuetype = Bug AND statusCategory != Done ORDER BY priority DESC, created DESC"),
+    ("EVC Critical Bugs", 'project = {p} AND issuetype = Bug AND labels = severity-critical AND statusCategory != Done ORDER BY created DESC'),
+    ("EVC CI Failures", 'project = {p} AND labels = ci-failure ORDER BY created DESC'),
+]
+
+
+def cmd_filters(a):
+    c = None if a.dry_run else cfg()
+    for name, jql in FILTERS:
+        jql = jql.format(p=(c or {}).get("JIRA_PROJECT", os.environ.get("JIRA_PROJECT", "EVC")))
+        if a.dry_run:
+            print(f"[dry run] would create filter: {name}\n          {jql}")
+            continue
+        st, data = call(c, "GET", "/rest/api/3/filter/search?" + urllib.parse.urlencode({"filterName": name}))
+        found = [f for f in data.get("values", []) if f.get("name") == name] if st == 200 else []
+        if found:
+            print(f"exists  filter {found[0]['id']}  {name}")
+            continue
+        st, data = call(c, "POST", "/rest/api/3/filter", {"name": name, "jql": jql, "favourite": True})
+        if st not in (200, 201):
+            sys.exit(f"filter create failed ({st}): {data}")
+        print(f"created filter {data['id']}  {name}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -152,6 +179,7 @@ def main():
     p = sub.add_parser("bug"); p.add_argument("--title", required=True); p.add_argument("--body", required=True)
     p.add_argument("--build"); p.add_argument("--ci", action="store_true", help="CI mode: reuse the open ci-failure bug")
     p.add_argument("--dry-run", action="store_true"); p.set_defaults(f=cmd_bug)
+    p = sub.add_parser("filters"); p.add_argument("--dry-run", action="store_true"); p.set_defaults(f=cmd_filters)
     a = ap.parse_args(); a.f(a)
 
 

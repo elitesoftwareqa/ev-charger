@@ -96,3 +96,27 @@ Builds with coverage on, runs the tests and writes an HTML report to
 ```bash
 scripts/coverage.sh build-coverage --fail-under-line 95
 ```
+
+## `jira_tool.py`: test cases and bugs in Jira
+
+Creates and updates issues in the Jira space `EVC` (Python 3, standard library
+only). It reads its settings from environment variables and never stores the API
+token in a file:
+
+```bash
+export JIRA_URL=https://elitetestengineering.atlassian.net
+export JIRA_EMAIL=you@example.com
+export JIRA_PROJECT=EVC
+read -s JIRA_API_TOKEN && export JIRA_API_TOKEN     # paste the token; nothing is echoed
+```
+
+| Command | What it does |
+|---|---|
+| `scripts/jira_tool.py cases [--dry-run]` | Create one Task per test case in `jira/test_cases.json` (TC-01 to TC-09). Cases that already exist are skipped |
+| `scripts/jira_tool.py bug --title T --body B [--dry-run]` | Create a Bug using the defect template. `--ci` reuses the open `ci-failure` bug and adds a comment |
+| `scripts/jira_tool.py filters [--dry-run]` | Create the saved filters the Jira dashboard uses (Test Cases, Open Bugs, Critical Bugs, CI Failures) |
+
+The space needs a work type named `Bug`; set `JIRA_BUG_TYPE` if yours has another
+name. CI runs the `--ci` form when a job fails on `main`, using four GitHub
+secrets (`JIRA_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN`, `JIRA_PROJECT`). Full set-up:
+[docs/EV-Charger-Jira-Workflow.docx](../docs/EV-Charger-Jira-Workflow.docx).

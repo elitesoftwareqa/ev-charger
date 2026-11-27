@@ -74,6 +74,18 @@ authentication. Details: [clients/README.md](clients/README.md) and
 366 tests in 8 groups, each its own program. QA testers: see
 [docs/EV-Charger-QA-Test-Guide.docx](docs/EV-Charger-QA-Test-Guide.docx).
 
+Manual test cases TC-01 to TC-09, with prerequisites, priorities, severities, steps
+and results: [docs/EV-Charger-QA-Flow-Test-Cases.docx](docs/EV-Charger-QA-Flow-Test-Cases.docx).
+A day of QA work: [docs/EV-Charger-QA-Day-in-the-Life.docx](docs/EV-Charger-QA-Day-in-the-Life.docx).
+
+## Bug tracking in Jira
+
+Test cases and bugs live in the Jira space `EVC`. `scripts/jira_tool.py` loads the
+test cases, raises bugs with the defect template and creates the dashboard filters,
+and a CI job opens a Bug when a build fails on `main`. Start branch, commit and pull
+request names with the issue key (for example `EVC-14 Fix ABB slowdown`). Set-up and
+dashboard steps: [docs/EV-Charger-Jira-Workflow.docx](docs/EV-Charger-Jira-Workflow.docx).
+
 | Group | Covers |
 |---|---|
 | `battery` | Battery and charge levels |
